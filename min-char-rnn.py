@@ -8,7 +8,7 @@ from pathlib import Path
 import pickle
 
 # data i/o
-data = open('zafor-sir.txt', 'r').read()
+data = open('input.txt', 'r').read()
 chars = list(set(data))
 data_size, vocab_size = len(data), len(chars)
 print('Data has {} characters, {} unique.'.format(data_size, vocab_size))
@@ -16,7 +16,7 @@ char_to_ix = {ch: i for i, ch in enumerate(chars)}
 ix_to_char = {i: ch for i, ch in enumerate(chars)}
 
 # hyper parameters
-hidden_size = 100  # size of hidden layer of neurons
+hidden_size = 10  # size of hidden layer of neurons
 seq_length = 100  # number of steps to unroll the RNN for
 learning_rate = 1e-1
 
@@ -26,6 +26,8 @@ Whh = np.random.randn(hidden_size, hidden_size)*0.01  # hidden to hidden
 Why = np.random.randn(vocab_size, hidden_size)*0.01  # hidden to output
 bh = np.zeros((hidden_size, 1))  # hidden_bias
 by = np.zeros((vocab_size, 1))  # output_bias
+mWxh, mWhh, mWhy = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)  # memory variables for Adagrad
+mbh, mby = np.zeros_like(bh), np.zeros_like(by)  # memory variables for Adagrad
 
 
 def lossFun(inputs, targets, hprev):
@@ -74,6 +76,8 @@ def sample(h, seed_ix, n):
     x = np.zeros((vocab_size, 1))
     x[seed_ix] = 1
     ixes = []
+    print(Wxh)
+    print(Whh)
     for t in range(n):
         h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
         y = np.dot(Why, h) + by
@@ -84,59 +88,91 @@ def sample(h, seed_ix, n):
         ixes.append(ix)
     return ixes
 
-n, p = 0, 0
-mWxh, mWhh, mWhy = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)
-mbh, mby = np.zeros_like(bh), np.zeros_like(by)  # memory variables for Adagrad
-smooth_loss = -np.log(1.0/vocab_size)*seq_length  # loss at iteration 0
 
-weight_file = Path("weights/0.pkl")
-if weight_file.is_file():
-    # Getting back the Weights:
-    with open('weights/0.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
-        n, smooth_loss, loss, dWxh, dWhh, dWhy, dbh, dby, hprev = pickle.load(f)
-        print("Resuming From %d iter with loss %f" % (n, smooth_loss))
+def get_weights():
+    _count = [0, 0]
+    _loss = [-np.log(1.0 / vocab_size) * seq_length,  -np.log(1.0 / vocab_size) * seq_length]
+    _weights = [Wxh, Whh, Why, bh, by]
+    _hprev = np.zeros((hidden_size, 1))
+    _mem_weights = [mWxh, mWhh, mWhy, mbh, mby]
 
-while True:
-    # prepare inputs (we're sweeping from left to right in steps seq_length long)
-    if p+seq_length+1 >= len(data) or n == 0:
-        hprev = np.zeros((hidden_size, 1))  # reset RNN memory
-        p = 0  # go from start of data
+    weight_file = Path("weights/0.pkl")
+    if weight_file.is_file():
+        # Getting back the Weights:
+        with open('weights/0.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
+            _count, _loss, _hprev, _weights, _mem_weights = pickle.load(f)
+            print("Resuming From %d iter with loss %f" % (_count[0], _loss[0]))
+
+    return _count, _loss, _hprev,  _weights, _mem_weights
+
+
+def train(count, all_loss, hprev):
+    n, p = count
+    smooth_loss, loss = all_loss
+
+    while True:
+        # prepare inputs (we're sweeping from left to right in steps seq_length long)
+        if p+seq_length+1 >= len(data) or n == 0:
+            hprev = np.zeros((hidden_size, 1))  # reset RNN memory
+            p = 0  # go from start of data
+        inputs = [char_to_ix[ch] for ch in data[p:p + seq_length]]
+        targets = [char_to_ix[ch] for ch in data[p + 1:p + seq_length + 1]]
+        # sample from the model now and then
+        if n % 500 == 0:
+            sample_ix = sample(hprev, inputs[0], 500)
+            txt = ''.join(ix_to_char[ix] for ix in sample_ix)
+            print('iter %d, loss: %f' % (n, smooth_loss), end='\r')
+            with open("output/" + str(n // 50000) + ".txt", 'a+') as f:
+                identifier = 'iter %d, loss: %f' % (n, smooth_loss)
+                f.write(identifier)
+                f.write('\n==================================\n')
+                f.write(txt)
+                f.write('\n\n')
+
+        # forward seq_length characters through the net and fetch gradient
+        loss, dWxh, dWhh, dWhy, dbh, dby, hprev = lossFun(inputs, targets, hprev)
+        smooth_loss = smooth_loss * 0.999 + loss * 0.001
+        if n % 500 == 0:
+            # print("Saving Weights on Iter: %f" % n)
+            # Saving the Weights:
+            with open('weights/0.pkl', 'wb') as f:
+                _count = [n, p]
+                _all_loss = [smooth_loss, loss]
+                _weights = [Wxh, Whh, Why, bh, by]
+                _mem_weights = [mWxh, mWhh, mWhy, mbh, mby]
+                pickle.dump([_count, _all_loss, hprev, _weights, _mem_weights], f)
+
+        # perform parameter update with Adagrad
+        for param, dparam, mem in zip([Wxh, Whh, Why, bh, by],
+                                      [dWxh, dWhh, dWhy, dbh, dby],
+                                      [mWxh, mWhh, mWhy, mbh, mby]):
+            mem += dparam * dparam
+            param += -learning_rate * dparam / np.sqrt(mem + 1e-8)  # adagrad update
+        p += seq_length  # move data pointer
+        n += 1  # iteration counter
+
+
+def generate(hprev, total, _count, _all_loss):
+    print(hprev)
+    n, p = _count
+    smooth_loss, loss = _all_loss
     inputs = [char_to_ix[ch] for ch in data[p:p + seq_length]]
-    targets = [char_to_ix[ch] for ch in data[p + 1:p + seq_length + 1]]
-    # sample from the model now and then
-    if n % 500 == 0:
-        sample_ix = sample(hprev, inputs[0], 500)
-        txt = ''.join(ix_to_char[ix] for ix in sample_ix)
-        print('iter %d, loss: %f' % (n, smooth_loss))
-        with open("output/" + str(n // 50000) + ".txt", 'a+') as f:
-            identifier = 'iter %d, loss: %f' % (n, smooth_loss)
-            f.write(identifier)
-            f.write('\n==================================\n')
-            f.write(txt)
-            f.write('\n\n')
-
-    # forward seq_length characters through the net and fetch gradient
-    loss, dWxh, dWhh, dWhy, dbh, dby, hprev = lossFun(inputs, targets, hprev)
-    smooth_loss = smooth_loss * 0.999 + loss * 0.001
-
-    if n % 500 == 0:
-        print("Saving Weights on Iter: %f" % n)
-        # Saving the Weights:
-        with open('weights/0.pkl', 'wb') as f:
-            pickle.dump([n, smooth_loss, loss, dWxh, dWhh, dWhy, dbh, dby, hprev], f)
-
-    # perform parameter update with Adagrad
-    for param, dparam, mem in zip([Wxh, Whh, Why, bh, by],
-                                  [dWxh, dWhh, dWhy, dbh, dby],
-                                  [mWxh, mWhh, mWhy, mbh, mby]):
-        mem += dparam * dparam
-        param += -learning_rate * dparam / np.sqrt(mem + 1e-8)  # adagrad update
-
-    p += seq_length  # move data pointer
-    n += 1  # iteration counter
+    sample_ix = sample(hprev, inputs[0], total)
+    txt = ''.join(ix_to_char[ix] for ix in sample_ix)
+    with open("output/" + str(n // 50000) + ".txt", 'a+') as f:
+        identifier = 'iter %d, loss: %f' % (n, smooth_loss)
+        f.write(identifier)
+        f.write('\n==================================\n')
+        f.write(txt)
+        f.write('\n\n')
 
 
-
+count, all_loss, h_prev, weights, mem_weights = get_weights()
+Wxh, Whh, Why, bh, by = weights
+mWxh, mWhh, mWhy, mbh, mby = mem_weights
+# train(count, all_loss, h_prev)
+print(Wxh, Whh)
+generate(h_prev, 500, count, all_loss)
 
 
 
