@@ -7,28 +7,6 @@ import numpy as np
 from pathlib import Path
 import pickle
 
-# data i/o
-data = open('input.txt', 'r').read()
-chars = list(set(data))
-data_size, vocab_size = len(data), len(chars)
-print('Data has {} characters, {} unique.'.format(data_size, vocab_size))
-char_to_ix = {ch: i for i, ch in enumerate(chars)}
-ix_to_char = {i: ch for i, ch in enumerate(chars)}
-
-# hyper parameters
-hidden_size = 10  # size of hidden layer of neurons
-seq_length = 100  # number of steps to unroll the RNN for
-learning_rate = 1e-1
-
-# model parameters
-Wxh = np.random.randn(hidden_size, vocab_size)*0.01  # input to hidden
-Whh = np.random.randn(hidden_size, hidden_size)*0.01  # hidden to hidden
-Why = np.random.randn(vocab_size, hidden_size)*0.01  # hidden to output
-bh = np.zeros((hidden_size, 1))  # hidden_bias
-by = np.zeros((vocab_size, 1))  # output_bias
-mWxh, mWhh, mWhy = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)  # memory variables for Adagrad
-mbh, mby = np.zeros_like(bh), np.zeros_like(by)  # memory variables for Adagrad
-
 
 def lossFun(inputs, targets, hprev):
     """
@@ -76,8 +54,6 @@ def sample(h, seed_ix, n):
     x = np.zeros((vocab_size, 1))
     x[seed_ix] = 1
     ixes = []
-    print(Wxh)
-    print(Whh)
     for t in range(n):
         h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
         y = np.dot(Why, h) + by
@@ -101,22 +77,26 @@ def get_weights():
         # Getting back the Weights:
         with open('weights/0.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
             _count, _loss, _hprev, _weights, _mem_weights = pickle.load(f)
-            print("Resuming From %d iter with loss %f" % (_count[0], _loss[0]))
+            # print("Resuming From %d iter with loss %f" % (_count[0], _loss[0]))
 
     return _count, _loss, _hprev,  _weights, _mem_weights
+
+
+# def save_model():
 
 
 def train(count, all_loss, hprev):
     n, p = count
     smooth_loss, loss = all_loss
 
-    while True:
+    for i in range(5):
         # prepare inputs (we're sweeping from left to right in steps seq_length long)
         if p+seq_length+1 >= len(data) or n == 0:
             hprev = np.zeros((hidden_size, 1))  # reset RNN memory
             p = 0  # go from start of data
         inputs = [char_to_ix[ch] for ch in data[p:p + seq_length]]
         targets = [char_to_ix[ch] for ch in data[p + 1:p + seq_length + 1]]
+        print(hprev)
         # sample from the model now and then
         if n % 500 == 0:
             sample_ix = sample(hprev, inputs[0], 500)
@@ -153,11 +133,23 @@ def train(count, all_loss, hprev):
 
 
 def generate(hprev, total, _count, _all_loss):
-    print(hprev)
+    iprev = np.array([
+        [0.72961938],
+        [-0.35330982],
+        [-0.50739483],
+        [-0.90847369],
+        [0.69079595],
+        [0.05311218],
+        [-0.434315],
+        [-0.91756149],
+        [-0.44593906],
+        [0.77491903]
+    ])
+
     n, p = _count
     smooth_loss, loss = _all_loss
     inputs = [char_to_ix[ch] for ch in data[p:p + seq_length]]
-    sample_ix = sample(hprev, inputs[0], total)
+    sample_ix = sample(iprev, inputs[0], total)
     txt = ''.join(ix_to_char[ix] for ix in sample_ix)
     with open("output/" + str(n // 50000) + ".txt", 'a+') as f:
         identifier = 'iter %d, loss: %f' % (n, smooth_loss)
@@ -167,12 +159,35 @@ def generate(hprev, total, _count, _all_loss):
         f.write('\n\n')
 
 
-count, all_loss, h_prev, weights, mem_weights = get_weights()
-Wxh, Whh, Why, bh, by = weights
-mWxh, mWhh, mWhy, mbh, mby = mem_weights
+if __name__ == '__main__':
+    # data i/o
+    data = open('input.txt', 'r').read()
+    chars = list(set(data))
+    data_size, vocab_size = len(data), len(chars)
+    print('Data has {} characters, {} unique.'.format(data_size, vocab_size))
+    char_to_ix = {ch: i for i, ch in enumerate(chars)}
+    ix_to_char = {i: ch for i, ch in enumerate(chars)}
+
+    # hyper parameters
+    hidden_size = 10  # size of hidden layer of neurons
+    seq_length = 100  # number of steps to unroll the RNN for
+    learning_rate = 1e-1
+
+    # model parameters
+    Wxh = np.random.randn(hidden_size, vocab_size) * 0.01  # input to hidden
+    Whh = np.random.randn(hidden_size, hidden_size) * 0.01  # hidden to hidden
+    Why = np.random.randn(vocab_size, hidden_size) * 0.01  # hidden to output
+    bh = np.zeros((hidden_size, 1))  # hidden_bias
+    by = np.zeros((vocab_size, 1))  # output_bias
+    mWxh, mWhh, mWhy = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)  # memory variables for Adagrad
+    mbh, mby = np.zeros_like(bh), np.zeros_like(by)  # memory variables for Adagrad
+
+# count, all_loss, h_prev, weights, mem_weights = get_weights()
+# Wxh, Whh, Why, bh, by = weights
+# mWxh, mWhh, mWhy, mbh, mby = mem_weights
 # train(count, all_loss, h_prev)
-print(Wxh, Whh)
-generate(h_prev, 500, count, all_loss)
+# print(Wxh, Whh)
+# generate(h_prev, 500, count, all_loss)
 
 
 
