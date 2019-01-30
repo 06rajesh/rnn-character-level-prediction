@@ -2,9 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="87f396b3-ad94-40ac-bb71-55b51ffe7c57" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/weights/checkpoints.npz" afterPath="$PROJECT_DIR$/weights/checkpoints.npz" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/weights/weights.npz" afterPath="$PROJECT_DIR$/weights/weights.npz" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/output/0.txt" afterPath="$PROJECT_DIR$/output/0.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rnn-char.py" afterPath="$PROJECT_DIR$/rnn-char.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -32,8 +29,8 @@
       <file leaf-file-name="rnn-char.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/rnn-char.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="427">
-              <caret line="196" column="4" lean-forward="false" selection-start-line="196" selection-start-column="4" selection-end-line="196" selection-end-column="4" />
+            <state relative-caret-position="439">
+              <caret line="183" column="0" lean-forward="false" selection-start-line="183" selection-start-column="0" selection-end-line="195" selection-end-column="42" />
               <folding>
                 <element signature="e#89#107#0" expanded="true" />
               </folding>
@@ -232,6 +229,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="983" y="24" width="937" height="1056" extended-state="4" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.29471317" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -241,7 +239,7 @@
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.40796554" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.40796554" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -449,8 +447,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/rnn-char.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="427">
-          <caret line="196" column="4" lean-forward="false" selection-start-line="196" selection-start-column="4" selection-end-line="196" selection-end-column="4" />
+        <state relative-caret-position="439">
+          <caret line="183" column="0" lean-forward="false" selection-start-line="183" selection-start-column="0" selection-end-line="195" selection-end-column="42" />
           <folding>
             <element signature="e#89#107#0" expanded="true" />
           </folding>
