@@ -193,6 +193,6 @@ if __name__ == '__main__':
     Wxh, Whh, Why, bh, by = get_weight_bias(hidden_size, vocab_size)
     mWxh, mWhh, mWhy, mbh, mby = get_mem_vars()
     cnt, completed, hPrev, l, smooth_l = load_checkpoints()
-    train(cnt, completed, smooth_l, hPrev)
-    # generate(hPrev, 500, cnt, completed, smooth_l)
+    # train(cnt, completed, smooth_l, hPrev)
+    generate(hPrev, 500, cnt, completed, smooth_l)
 
